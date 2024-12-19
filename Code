@@ -1,0 +1,108 @@
+-- Create the Owners Table
+CREATE TABLE Owners (
+    owner_id INTEGER PRIMARY KEY AUTOINCREMENT, -- Unique owner ID
+    name TEXT NOT NULL,                         -- Owner's name (required)
+    email TEXT NOT NULL UNIQUE,                 -- Owner's email address (unique)
+    phone_number TEXT NOT NULL UNIQUE,          -- Owner's phone number (unique)
+    address TEXT                                -- Owner's address (optional)
+);
+
+-- Create the Properties Table
+CREATE TABLE Properties (
+    property_id INTEGER PRIMARY KEY AUTOINCREMENT, -- Unique property ID
+    address TEXT NOT NULL,                         -- Property address (required)
+    city TEXT NOT NULL,                            -- City where the property is located (required)
+    rent_price REAL NOT NULL,                      -- Monthly rent price (required)
+    owner_id INTEGER,                              -- Reference to the Owner of the property
+    is_available INTEGER DEFAULT 1,                -- Availability of the property (1 for available, 0 for unavailable)
+    FOREIGN KEY (owner_id) REFERENCES Owners(owner_id) -- Link to the Owners table
+        ON DELETE SET NULL ON UPDATE CASCADE     -- If an owner is deleted, their properties' owner_id will be set to NULL
+);
+
+-- Create the Tenants Table
+CREATE TABLE Tenants (
+    tenant_id INTEGER PRIMARY KEY AUTOINCREMENT,  -- Unique tenant ID
+    name TEXT NOT NULL,                           -- Tenant's name (required)
+    email TEXT NOT NULL UNIQUE,                   -- Tenant's email (unique)
+    phone_number TEXT NOT NULL UNIQUE,            -- Tenant's phone number (unique)
+    move_in_date DATE,                            -- Date when the tenant moved in
+    property_id INTEGER,                          -- Property the tenant occupies
+    FOREIGN KEY (property_id) REFERENCES Properties(property_id)  -- Link to the Properties table
+        ON DELETE SET NULL ON UPDATE CASCADE     -- If a property is deleted, the tenant's property_id will be set to NULL
+);
+
+-- Insert Sample Owners
+INSERT INTO Owners (name, email, phone_number, address)
+VALUES 
+    ('John Doe', 'john@example.com', '1234567890', '123 Elm Street'),
+    ('Jane Smith', 'jane@example.com', '0987654321', '456 Oak Avenue');
+
+-- Insert Sample Properties
+-- Property for Owner 1
+INSERT INTO Properties (address, city, rent_price, owner_id)
+VALUES 
+    ('789 Pine Road', 'Los Angeles', 2500.00, 1);
+
+-- Property for Owner 2
+INSERT INTO Properties (address, city, rent_price, owner_id) 
+VALUES 
+    ('135 Maple Street', 'San Francisco', 3200.00, 2);
+
+-- Insert Sample Tenants
+-- Tenant for Property 1 (Owned by John Doe)
+INSERT INTO Tenants (name, email, phone_number, move_in_date, property_id) 
+VALUES 
+    ('Alice Johnson', 'alice@example.com', '5555551234', '2023-05-01', 1);
+
+-- Tenant for Property 1 (Owned by John Doe)
+INSERT INTO Tenants (name, email, phone_number, move_in_date, property_id) 
+VALUES 
+    ('Bob Wilson', 'bob@example.com', '5555555678', '2023-07-15', 1);
+
+-- Insert Additional Data
+-- Add a New Owner (Michael Green)
+INSERT INTO Owners (name, email, phone_number, address) 
+VALUES 
+    ('Michael Green', 'michael.green@example.com', '9876543210', '789 Birch Lane');
+
+-- Add a New Property Owned by Michael Green
+INSERT INTO Properties (address, city, rent_price, owner_id)
+VALUES 
+    ('22 Willow Drive', 'Chicago', 1800.00, 3);
+
+-- Add a New Tenant Without a Property Yet
+INSERT INTO Tenants (name, email, phone_number, move_in_date, property_id) 
+VALUES 
+    ('Linda White', 'linda.white@example.com', '6543219876', '2024-01-01', NULL);
+
+-- Assign a New Tenant to an Existing Property (e.g., Property ID 2 - Owned by Jane Smith)
+INSERT INTO Tenants (name, email, phone_number, move_in_date, property_id) 
+VALUES 
+    ('Mark Lee', 'mark.lee@example.com', '1231231234', '2024-01-15', 2);
+
+-- Mark Property 2 as Unavailable (Occupied)
+UPDATE Properties 
+SET is_available = 0 -- Marking the property as not available
+WHERE property_id = 2;
+
+-- Query to View Owners, Properties, and Tenants Together
+SELECT 
+    o.owner_id AS owner_id,               -- Owner's ID
+    o.name AS owner_name,                 -- Owner's name
+    o.email AS owner_email,               -- Owner's email
+    o.phone_number AS owner_phone,       -- Owner's phone number
+    o.address AS owner_address,          -- Owner's address
+    p.property_id AS property_id,        -- Property ID
+    p.address AS property_address,       -- Property address
+    p.city AS property_city,             -- Property city
+    p.rent_price AS property_rent_price, -- Property rent price
+    p.is_available AS is_property_available, -- Availability status of the property
+    t.tenant_id AS tenant_id,            -- Tenant's ID
+    t.name AS tenant_name,               -- Tenant's name
+    t.email AS tenant_email,             -- Tenant's email
+    t.phone_number AS tenant_phone,      -- Tenant's phone number
+    t.move_in_date AS tenant_move_in_date -- Tenant's move-in date
+FROM Properties p
+LEFT JOIN Owners o ON p.owner_id = o.owner_id  -- Joining Properties with Owners
+LEFT JOIN Tenants t ON p.property_id = t.property_id  -- Joining Properties with Tenants
+ORDER BY o.owner_id, p.property_id;  -- Ordering by Owner ID and Property ID
